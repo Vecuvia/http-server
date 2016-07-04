@@ -8,8 +8,6 @@ def log_response(client, request, response):
         status=response.status,
         length=response.length))
 
-class SocketClosedException(Exception): pass
-
 class Client(object):
     def __init__(self, socket, address):
         self.socket, self.address = socket, address
@@ -17,10 +15,9 @@ class Client(object):
         self.data = b""
     def receive(self, buffer_size):
         data = self.socket.recv(buffer_size)
-        if not data:
-            raise SocketClosedException
-        self.data += data
-        return len(data) < buffer_size
+        if data:
+            self.data += data
+        return len(data)
     def send(self, data):
         if type(data) is Response:
             data = data.make()
@@ -129,14 +126,15 @@ class BaseServer(object):
         #print(client)
     def read_from(self, sock):
         client = self.clients[sock]
-        try:
-            no_more_data = client.receive(self.config["BUFFER_SIZE"])
-            if no_more_data:
-                if socket not in self.write_list:
-                    self.write_list.append(sock)
-                    #print(time.time(), client.data)
-        except SocketClosedException:
+        data_length = client.receive(self.config["BUFFER_SIZE"])
+        if data_length == 0:
             self.drop_client(client)
+            return
+        no_more_data = data_length < self.config["BUFFER_SIZE"]
+        if no_more_data:
+            if socket not in self.write_list:
+                self.write_list.append(sock)
+                #print(time.time(), client.data)
     def parse_request(self, client):
         return Request.parse(client.data)
     def make_error(self, error_code, error_message):
