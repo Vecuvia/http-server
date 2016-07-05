@@ -142,6 +142,9 @@ class BaseServer(object):
             headers={"Content-type": "text/html"},
             content=open(self.config["ERROR_PAGE"]).read().format(
                 error_code=error_code, error_message=error_message))
+    def make_redirect(self, location):
+        return server.Response(self.config["VERSION"], 303, "See Other",
+            headers={"Location": location})
     def make_response(self, request):
         if request.malformed:
             return self.make_error(400, "Bad Request")

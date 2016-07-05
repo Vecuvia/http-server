@@ -55,7 +55,6 @@ class Pastebin(server.BaseServer):
         try:
             paste_id = int(uri)
             paste_content = html_encode(self.pastes[paste_id])
-            #print(paste_content)
             return server.Response(self.config["VERSION"], 200, "Ok",
                 headers={"Content-type": "text/html"},
                 content=PasteTemplate.format(
@@ -67,8 +66,7 @@ class Pastebin(server.BaseServer):
         if request.uri == "/":
             data = urllib.parse.parse_qs(request.content.decode())
             self.pastes.append("".join(data["paste"]))
-            return server.Response(self.config["VERSION"], 303, "See Other",
-                headers={"Location": "/{0}".format(len(self.pastes)-1)})
+            return self.make_redirect("/{0}".format(len(self.pastes)-1))
         return self.make_error(400, "Bad Request")
 
 if __name__ == "__main__":
