@@ -1,4 +1,4 @@
-import server, urllib.parse
+import server, urllib.parse, os
 
 BaseTemplate = """\
 <!doctype html>
@@ -99,11 +99,12 @@ class PersistentPastebin(Pastebin):
         except (ValueError, FileNotFoundError):
             return self.make_error(404, "Not Found")
     def create_paste(self, data):
-        with open(os.path.join(self.basedir, "ID"), "rw") as id_file:
+        with open(os.path.join(self.basedir, "ID"), "r") as id_file:
             try:
                 paste_id = int(id_file.read())
             except ValueError:
                 paste_id = 0
+        with open(os.path.join(self.basedir, "ID"), "w") as id_file:
             id_file.write(str(paste_id + 1))
         with open(os.path.join(self.basedir, "%s" % paste_id), "w") as file:
             file.write(data)
