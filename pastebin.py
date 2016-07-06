@@ -58,9 +58,11 @@ class Pastebin(server.BaseServer):
         elif request.uri == "/stats":
             return self.serve_file("text/html",
                 content=StatsTemplate.format(
-                    no_pastes=len(self.pastes))
+                    no_pastes=self.number_of_pastes())
                 )
         return self.get_paste(request.uri[1:])
+    def number_of_pastes(self):
+        return len(self.pastes)
     def get_paste(self, id):
         try:
             paste_id = int(id)
@@ -98,12 +100,14 @@ class PersistentPastebin(Pastebin):
                 )
         except (ValueError, FileNotFoundError):
             return self.make_error(404, "Not Found")
+    def number_of_pastes(self):
+        try:
+            with open(os.path.join(self.basedir, "ID"), "r") as id_file:
+                return int(id_file.read())
+        except (ValueError, FileNotFoundError):
+            return 0
     def create_paste(self, data):
-        with open(os.path.join(self.basedir, "ID"), "r") as id_file:
-            try:
-                paste_id = int(id_file.read())
-            except ValueError:
-                paste_id = 0
+        paste_id = number_of_pastes()
         with open(os.path.join(self.basedir, "ID"), "w") as id_file:
             id_file.write(str(paste_id + 1))
         with open(os.path.join(self.basedir, "%s" % paste_id), "w") as file:
