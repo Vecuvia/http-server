@@ -107,7 +107,7 @@ class PersistentPastebin(Pastebin):
         except (ValueError, FileNotFoundError):
             return 0
     def create_paste(self, data):
-        paste_id = number_of_pastes()
+        paste_id = self.number_of_pastes()
         with open(os.path.join(self.basedir, "ID"), "w") as id_file:
             id_file.write(str(paste_id + 1))
         with open(os.path.join(self.basedir, "%s" % paste_id), "w") as file:
