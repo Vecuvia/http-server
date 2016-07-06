@@ -145,6 +145,10 @@ class BaseServer(object):
     def make_redirect(self, location):
         return server.Response(self.config["VERSION"], 303, "See Other",
             headers={"Location": location})
+    def serve_file(self, mime_type, content):
+        return server.Response(self.config["VERSION"], 200, "Ok",
+            headers={"Content-type": mime_type},
+            content=content)
     def make_response(self, request):
         if request.malformed:
             return self.make_error(400, "Bad Request")

@@ -42,24 +42,23 @@ class Pastebin(server.BaseServer):
         self.pastes = []
     def do_GET(self, request):
         if request.uri == "/":
-            return server.Response(self.config["VERSION"], 200, "Ok",
-                headers={"Content-type": "text/html"},
+            return self.serve_file("text/html",
                 content=IndexTemplate)
         elif request.uri == "/stats":
-            return server.Response(self.config["VERSION"], 200, "Ok",
-                headers={"Content-type": "text/html"},
+            return self.serve_file("text/html",
                 content=StatsTemplate.format(
-                    no_pastes=len(self.pastes)))
+                    no_pastes=len(self.pastes))
+                )
         return self.get_paste(request.uri[1:])
     def get_paste(self, uri):
         try:
             paste_id = int(uri)
             paste_content = html_encode(self.pastes[paste_id])
-            return server.Response(self.config["VERSION"], 200, "Ok",
-                headers={"Content-type": "text/html"},
+            return self.serve_file("text/html",
                 content=PasteTemplate.format(
                     paste_id=paste_id,
-                    paste_content=paste_content))
+                    paste_content=paste_content)
+                )
         except (ValueError, IndexError):
             return self.make_error(404, "Not Found")
     def do_POST(self, request):
