@@ -40,6 +40,16 @@ class Pastebin(server.BaseServer):
     def __init__(self, *args, **kwargs):
         super(Pastebin, self).__init__(*args, **kwargs)
         self.pastes = []
+    def do_HEAD(self, request):
+        response = self.do_GET(request)
+        if response.status == 200:
+            return server.Response(self.config["VERSION"], 200, "OK",
+                headers={
+                    "Content-type": response.headers["Content-type"],
+                    "Content-length": len(response.content)
+                })
+        else:
+            return response
     def do_GET(self, request):
         if request.uri == "/":
             return self.serve_file("text/html",
