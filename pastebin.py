@@ -43,6 +43,7 @@ class Pastebin(server.BaseServer):
     def do_HEAD(self, request):
         response = self.do_GET(request)
         if response.status == 200:
+            #TODO: Is this compliant with the standard?
             return server.Response(self.config["VERSION"], 200, "OK",
                 headers={
                     "Content-type": response.headers["Content-type"],
@@ -60,10 +61,11 @@ class Pastebin(server.BaseServer):
                     no_pastes=len(self.pastes))
                 )
         return self.get_paste(request.uri[1:])
-    def get_paste(self, uri):
+    def get_paste(self, id):
         try:
-            paste_id = int(uri)
-            paste_content = html_encode(self.pastes[paste_id])
+            paste_id = int(id)
+            paste_content = self.pastes[paste_id]
+            paste_content = html_encode(paste_content)
             return self.serve_file("text/html",
                 content=PasteTemplate.format(
                     paste_id=paste_id,
@@ -74,9 +76,38 @@ class Pastebin(server.BaseServer):
     def do_POST(self, request):
         if request.uri == "/":
             data = urllib.parse.parse_qs(request.content.decode())
-            self.pastes.append("".join(data["paste"]))
-            return self.make_redirect("/{0}".format(len(self.pastes)-1))
+            paste_id = self.create_paste("".join(data["paste"]))
+            return self.make_redirect("/{0}".format(paste_id))
         return self.make_error(400, "Bad Request")
+    def create_paste(self, data):
+        self.pastes.append(data)
+        return len(self.pastes) - 1
+
+class PersistentPastebin(Pastebin):
+    def __init__(self, *args, **kwargs):
+        super(PersistentPastebin, self).__init__(*args, **kwargs)
+    def get_paste(self, id):
+        try:
+            paste_id = int(id)
+            with open(os.path.join(self.basedir, "%s" % paste_id)) as file:
+                paste_content = html_encode(file.read())
+            return self.serve_file("text/html",
+                content=PasteTemplate.format(
+                    paste_id=paste_id,
+                    paste_content=paste_content)
+                )
+        except (ValueError, FileNotFoundError):
+            return self.make_error(404, "Not Found")
+    def create_paste(self, data):
+        with open(os.path.join(self.basedir, "ID"), "rw") as id_file:
+            try:
+                paste_id = int(id_file.read())
+            except ValueError:
+                paste_id = 0
+            id_file.write(str(paste_id + 1))
+        with open(os.path.join(self.basedir, "%s" % paste_id), "w") as file:
+            file.write(data)
+        return paste_id
 
 if __name__ == "__main__":
-    Pastebin(address="", port=8888).serve_forever()
+    PersistentPastebin(address="", port=8888).serve_forever()
