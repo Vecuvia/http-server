@@ -220,6 +220,8 @@ class BaseServer(object):
         sock = client.socket
         if sock in self.write_list:
             self.write_list.remove(sock)
+        #This could lead to errors if called within the `for in writable`
+        # loop. But I didn't see any yet.
         if sock in self.writable:
             self.writable.remove(sock)
         self.read_list.remove(sock)
